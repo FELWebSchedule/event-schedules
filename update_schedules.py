@@ -1,44 +1,35 @@
-from playwright.sync_api import sync_playwright
-from urllib.parse import urlparse, urljoin
 
-URL = "https://hotwheelsmonstertruckslive.com/event/"
+import requests
+from bs4 import BeautifulSoup
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page()
+BASE = "https://hotwheelsmonstertruckslive.com"
 
-    response = page.goto(
-        URL,
-        wait_until="domcontentloaded",
-        timeout=90000
+urls = [
+    BASE + "/event/billings-mt-2027/",
+    BASE + "/event/london-uk-2027/",
+    BASE + "/event/coming-soon-asuncion/"
+]
+
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
+
+for url in urls:
+    print("\n" + "=" * 70)
+    print("EVENT URL:", url)
+
+    response = requests.get(
+        url, headers=headers, timeout=60
     )
 
-    page.wait_for_timeout(10000)
+    print("HTTP STATUS:", response.status_code)
+    response.raise_for_status()
 
-    print("HTTP STATUS:", response.status)
+    soup = BeautifulSoup(response.text, "html.parser")
 
-    links = page.locator("a[href]").evaluate_all(
-        "(elements) => elements.map(a => ({text: a.innerText.trim(), href: a.href}))"
-    )
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
 
-    events = {}
+    print("PAGE CONTENT:")
+    print(soup.get_text(separator="\n", strip=True))
 
-    for link in links:
-        href = urljoin(URL, link["href"])
-        parsed = urlparse(href)
-        path = parsed.path.rstrip("/")
-
-        if (
-            parsed.netloc == urlparse(URL).netloc
-            and path.startswith("/event/")
-            and path != "/event"
-        ):
-            clean_url = parsed.scheme + "://" + parsed.netloc + path + "/"
-            events[clean_url] = link["text"]
-
-    print("TOTAL EVENT LINKS:", len(events))
-
-    for href, text in sorted(events.items()):
-        print(text, "|", href)
-
-    browser.close()
