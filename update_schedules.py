@@ -1,4 +1,3 @@
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -32,4 +31,3 @@ for url in urls:
 
     print("PAGE CONTENT:")
     print(soup.get_text(separator="\n", strip=True))
-
