@@ -5,9 +5,11 @@ on:
     - cron: '0 14 * * *'
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - 'update_schedules.py'
-      - '.github/workflows/**'
+      - '.github/workflows/update-schedules.yml'
 
 permissions:
   contents: write
@@ -35,4 +37,3 @@ jobs:
           git add .
           git diff --cached --quiet || git commit -m "Update event schedules"
           git push
-          
