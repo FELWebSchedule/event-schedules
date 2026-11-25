@@ -1,23 +1,21 @@
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError
+from playwright.sync_api import sync_playwright
 
-urls = [
-    "https://hotwheelsmonstertruckslive.com/",
-    "https://hotwheelsmonstertruckslive.com/event/",
-    "https://hotwheelsmonstertruckslive.com/wp-json/"
-]
+url = "https://hotwheelsmonstertruckslive.com/"
 
-for url in urls:
-    print("\nTesting:", url)
-    try:
-        request = Request(url, headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "text/html,application/json,*/*"
-        })
-        with urlopen(request, timeout=30) as response:
-            print("SUCCESS:", response.status)
-            print("Bytes:", len(response.read()))
-    except HTTPError as error:
-        print("HTTP ERROR:", error.code)
-    except Exception as error:
-        print("ERROR:", str(error))
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
+
+    print("Testing browser access:", url)
+
+    response = page.goto(
+        url,
+        wait_until="domcontentloaded",
+        timeout=60000
+    )
+
+    print("HTTP STATUS:", response.status)
+    print("PAGE TITLE:", page.title())
+    print("PAGE LENGTH:", len(page.content()))
+
+    browser.close()
