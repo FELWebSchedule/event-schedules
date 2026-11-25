@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '0 14 * * *'
   workflow_dispatch:
+  push:
+    paths:
+      - 'update_schedules.py'
+      - '.github/workflows/**'
 
 permissions:
   contents: write
@@ -19,10 +23,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 playwright
-
-      - name: Install Chromium
-        run: python -m playwright install --with-deps chromium
+        run: pip install requests beautifulsoup4
 
       - name: Update schedules
         run: python update_schedules.py
@@ -34,3 +35,4 @@ jobs:
           git add .
           git diff --cached --quiet || git commit -m "Update event schedules"
           git push
+          
