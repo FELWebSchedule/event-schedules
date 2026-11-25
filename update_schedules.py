@@ -1,34 +1,44 @@
-
 from playwright.sync_api import sync_playwright
-from bs4 import BeautifulSoup
+from urllib.parse import urlparse, urljoin
 
-url = "https://hotwheelsmonstertruckslive.com/"
+URL = "https://hotwheelsmonstertruckslive.com/event/"
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
     page = browser.new_page()
+
     response = page.goto(
-        url,
+        URL,
         wait_until="domcontentloaded",
-        timeout=60000
+        timeout=90000
     )
-    page.wait_for_timeout(5000)
+
+    page.wait_for_timeout(10000)
 
     print("HTTP STATUS:", response.status)
 
-    soup = BeautifulSoup(page.content(), "html.parser")
-    links = {}
+    links = page.locator("a[href]").evaluate_all(
+        "(elements) => elements.map(a => ({text: a.innerText.trim(), href: a.href}))"
+    )
 
-    for link in soup.find_all("a", href=True):
-        href = link["href"]
-        label = link.get_text(" ", strip=True)
+    events = {}
 
-        if href not in links:
-            links[href] = label
+    for link in links:
+        href = urljoin(URL, link["href"])
+        parsed = urlparse(href)
+        path = parsed.path.rstrip("/")
 
-    print("TOTAL UNIQUE LINKS:", len(links))
+        if (
+            parsed.netloc == urlparse(URL).netloc
+            and path.startswith("/event/")
+            and path != "/event"
+        ):
+            clean_url = parsed.scheme + "://" + parsed.netloc + path + "/"
+            events[clean_url] = link["text"]
 
-    for href, label in links.items():
-        print(f"{label} | {href}")
+    print("TOTAL EVENT LINKS:", len(events))
+
+    for href, text in sorted(events.items()):
+        print(text, "|", href)
 
     browser.close()
